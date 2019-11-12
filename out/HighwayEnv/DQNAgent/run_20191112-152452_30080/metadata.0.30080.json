@@ -1,0 +1,59 @@
+{
+    "agent": {
+        "__class__": "<class 'rl_agents.agents.deep_q_network.pytorch.DQNAgent'>",
+        "batch_size": 32,
+        "device": "cuda:best",
+        "exploration": {
+            "final_temperature": 0.05,
+            "method": "EpsilonGreedy",
+            "tau": 6000,
+            "temperature": 1.0
+        },
+        "gamma": 0.8,
+        "loss_function": "smooth_l1",
+        "memory_capacity": 15000,
+        "model": {
+            "base_module": {
+                "out": null,
+                "type": "MultiLayerPerceptron"
+            },
+            "in": 25,
+            "layers": [
+                256,
+                256
+            ],
+            "out": 5,
+            "type": "DuelingNetwork"
+        },
+        "n_steps": 1,
+        "optimizer": {
+            "k": 5,
+            "lr": 0.0005,
+            "type": "ADAM",
+            "weight_decay": 0
+        },
+        "target_update": 50
+    },
+    "env": {
+        "__class__": "<class 'highway_env.envs.highway_env.HighwayEnv'>",
+        "centering_position": [
+            0.3,
+            0.5
+        ],
+        "collision_reward": -1,
+        "duration": 20,
+        "id": "highway-v0",
+        "import_module": "highway_env",
+        "initial_spacing": 2,
+        "lanes_count": 2,
+        "observation": {
+            "type": "Kinematics"
+        },
+        "other_vehicles_type": "highway_env.vehicle.behavior.IDMVehicle",
+        "policy_frequency": 1,
+        "screen_height": 150,
+        "screen_width": 600,
+        "show_trajectories": false,
+        "vehicles_count": 5
+    }
+}

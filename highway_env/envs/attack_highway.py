@@ -6,6 +6,9 @@ from highway_env.envs.common.abstract import AbstractEnv
 from highway_env.road.road import Road, RoadNetwork
 from highway_env.vehicle.control import MDPVehicle
 
+# for loading target agent
+from rl_agents.agents.common.factory import load_agent
+
 
 class AttackHighWay(AbstractEnv):
     """
@@ -17,12 +20,11 @@ class AttackHighWay(AbstractEnv):
 
     COLLISION_REWARD = -1
     """ The reward received when colliding with a vehicle."""
-    RIGHT_LANE_REWARD = 0.1
-    """ The reward received when driving on the right-most lanes, linearly mapped to zero for other lanes."""
-    HIGH_VELOCITY_REWARD = 0.4
-    """ The reward received when driving at full speed, linearly mapped to zero for lower speeds."""
-    LANE_CHANGE_REWARD = -0
-    """ The reward received at each lane change action."""
+
+    def __init__(self, config=None):
+        super(AttackHighWay, self).__init__(config)
+        self.target_model = load_agent(config["target_agent_config"], self)
+        self.target_model.load(config["target_agent_load"])
 
     def default_config(self):
         config = super().default_config()
@@ -34,7 +36,9 @@ class AttackHighWay(AbstractEnv):
             "vehicles_count": 50,
             "duration": 40,  # [s]
             "initial_spacing": 2,
-            "collision_reward": self.COLLISION_REWARD
+            "collision_reward": self.COLLISION_REWARD,
+            "target_agent_config": "",
+            "target_agent_load": ""
         })
         return config
 
@@ -45,8 +49,57 @@ class AttackHighWay(AbstractEnv):
         return super(AttackHighWay, self).reset()
 
     def step(self, action):
-        self.steps += 1
-        return super(AttackHighWay, self).step(action)
+        """
+            Perform an action and step the environment dynamics.
+
+            The action is executed by the ego-vehicle, and all other vehicles on the road performs their default
+            behaviour for several simulation timesteps until the next decision making step.
+        :param int action: the action performed by the ego-vehicle
+        :return: a tuple (observation, reward, terminal, info)
+        """
+        if self.road is None or self.vehicle is None:
+            raise NotImplementedError("The road and vehicle must be initialized in the environment implementation")
+
+        self._simulate(action)
+
+        obs = self.observation.observe()
+        reward = self._reward(action)
+        terminal = self._is_terminal()
+
+        info = {
+            "velocity": self.vehicle.velocity,
+            "crashed": self.vehicle.crashed,
+            "action": action,
+        }
+        try:
+            info["cost"] = self._cost(action)
+        except NotImplementedError:
+            pass
+
+        return obs, reward, terminal, info
+
+    def _simulate(self, action=None):
+        """
+            Perform several steps of simulation with constant action
+        """
+        for k in range(int(self.SIMULATION_FREQUENCY // self.config["policy_frequency"])):
+            if action is not None and \
+                    self.time % int(self.SIMULATION_FREQUENCY // self.config["policy_frequency"]) == 0:
+                # Forward action to the vehicle
+                self.vehicle.act(self.ACTIONS[action])
+
+            self.road.act()
+            self.road.step(1 / self.SIMULATION_FREQUENCY)
+            self.time += 1
+
+            # Automatically render intermediate simulation steps if a viewer has been launched
+            # Ignored if the rendering is done offscreen
+            self._automatic_rendering()
+
+            # Stop at terminal states
+            if self.done or self._is_terminal():
+                break
+        self.enable_auto_render = False
 
     def _create_road(self):
         """
@@ -59,6 +112,12 @@ class AttackHighWay(AbstractEnv):
         """
             Create some new random vehicles of a given type, and add them on the road.
         """
+        # target AV
+        self.target_vehicle = MDPVehicle.create_random(self.road, 25, spacing=self.config["initial_spacing"])
+        self.target_vehicle.color = (200, 0, 150)  # purple
+        self.road.vehicles.append(self.target_vehicle)
+
+        # attacker: training agent
         self.vehicle = MDPVehicle.create_random(self.road, 25, spacing=self.config["initial_spacing"])
         self.road.vehicles.append(self.vehicle)
 
@@ -72,27 +131,19 @@ class AttackHighWay(AbstractEnv):
         :param action: the last action performed
         :return: the corresponding reward
         """
-        action_reward = {0: self.LANE_CHANGE_REWARD, 1: 0, 2: self.LANE_CHANGE_REWARD, 3: 0, 4: 0}
-        neighbours = self.road.network.all_side_lanes(self.vehicle.lane_index)
-        state_reward = \
-            + self.config["collision_reward"] * self.vehicle.crashed \
-            + self.RIGHT_LANE_REWARD * self.vehicle.target_lane_index[2] / (len(neighbours) - 1) \
-            + self.HIGH_VELOCITY_REWARD * self.vehicle.velocity_index / (self.vehicle.SPEED_COUNT - 1)
-        return utils.remap(action_reward[action] + state_reward,
-                           [self.config["collision_reward"], self.HIGH_VELOCITY_REWARD+self.RIGHT_LANE_REWARD],
-                           [0, 1])
+        return 0
 
     def _is_terminal(self):
         """
             The episode is over if the ego vehicle crashed or the time is out.
         """
-        return self.vehicle.crashed or self.steps >= self.config["duration"]
+        return self.target_vehicle.crashed or self.steps >= self.config["duration"]
 
     def _cost(self, action):
         """
             The cost signal is the occurrence of collision
         """
-        return float(self.vehicle.crashed)
+        return float(self.target_vehicle.crashed)
 
 
 register(

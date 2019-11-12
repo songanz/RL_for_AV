@@ -24,7 +24,7 @@ class Evaluation(object):
         The evaluation of an agent interacting with an environment to maximize its expected reward.
     """
 
-    OUTPUT_FOLDER = 'trails'
+    OUTPUT_FOLDER = 'out'
     SAVED_MODELS_FOLDER = 'saved_models'
     RUN_FOLDER = 'run_{}_{}'
     METADATA_FILE = 'metadata.{}.json'
@@ -72,7 +72,7 @@ class Evaluation(object):
         self.directory = Path(directory or self.default_directory)
         self.run_directory = self.directory / (run_directory or self.default_run_directory)
         self.monitor = MonitorV2(env,
-                                 str(self.run_directory),
+                                 self.run_directory,
                                  video_callable=(None if self.display_env else False))
         self.writer = SummaryWriter(str(self.run_directory))
         self.agent.set_writer(self.writer)

@@ -17,8 +17,5 @@ _build
 .pytest_cache
 .cache
 
-# Outputs
-**/out/*
-
 # VirtualEnv
 venv/

@@ -32,12 +32,12 @@ if __name__ == '__main__':
     #                  policy_kwargs=policy_kwargs,
     #                  n_steps=cfg["--n_steps"],
     #                  learning_rate=cfg["--learning_rate"],
-    #                  tensorboard_log="./trails/logs/highway/")
+    #                  tensorboard_log="./out/logs/highway/")
     #     model.learn(total_timesteps=int(cfg["--steps"]))
-    #     model.save("./trails/ppo2_highway")
+    #     model.save("./out/ppo2_highway")
     #
     # if cfg["--test"]:
-    #     model = PPO2.load("./trails/ppo2_highway")
+    #     model = PPO2.load("./out/ppo2_highway")
     #     obs = env.reset()
     #     while True:
     #         action, _states = model.predict(obs)
@@ -54,12 +54,12 @@ if __name__ == '__main__':
                     batch_size=cfg["--batch_size"],
                     exploration_fraction=0.3,
                     learning_rate=cfg["--learning_rate"],
-                    tensorboard_log="./trails/logs/highway/")
+                    tensorboard_log="./out/logs/highway/")
         model.learn(total_timesteps=int(cfg["--steps"]))
-        model.save("./trails/deepq_highway")
+        model.save("./out/deepq_highway")
     #
     # if cfg["--test"]:
-    #     model = DQN.load("./trails/deepq_intersection")
+    #     model = DQN.load("./out/deepq_intersection")
     #     obs = env.reset()
     #     while True:
     #         action, _ = model.predict(obs)
