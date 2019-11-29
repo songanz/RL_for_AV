@@ -1,0 +1,36 @@
+{
+    "agent": {
+        "__class__": "<class 'rl_agents.agents.tree_search.deterministic.DeterministicPlannerAgent'>",
+        "budget": 75,
+        "env_preprocessors": [
+            {
+                "method": "simplify"
+            }
+        ],
+        "gamma": 0.7,
+        "max_depth": 6,
+        "step_strategy": "reset"
+    },
+    "env": {
+        "__class__": "<class 'highway_env.envs.highway_env.HighwayEnv'>",
+        "centering_position": [
+            0.3,
+            0.5
+        ],
+        "collision_reward": -1,
+        "duration": 30,
+        "id": "highway-v0",
+        "import_module": "highway_env",
+        "initial_spacing": 2,
+        "lanes_count": 3,
+        "observation": {
+            "type": "Kinematics"
+        },
+        "other_vehicles_type": "highway_env.vehicle.behavior.IDMVehicle",
+        "policy_frequency": 1,
+        "screen_height": 150,
+        "screen_width": 600,
+        "show_trajectories": false,
+        "vehicles_count": 20
+    }
+}
